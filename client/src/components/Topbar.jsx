@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function Topbar() {
   return (
     <header className="topbar">
@@ -6,7 +8,7 @@ function Topbar() {
         <a href="#projects">Projects</a>
         <a href="#clients">Clients</a>
         <a href="#contact">Contact</a>
-        <a href="/admin">Admin</a>
+        <Link to="/admin">Admin</Link>
       </nav>
       <a className="cta" href="#contact">Get Quote</a>
     </header>

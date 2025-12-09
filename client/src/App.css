@@ -169,7 +169,8 @@
   gap: 28px;
 }
 
-.nav-links a {
+.nav-links a,
+.nav-links > * {
   color: #374151;
   font-weight: 600;
   text-decoration: none;
@@ -177,9 +178,11 @@
   border-radius: 8px;
   transition: all 200ms ease;
   position: relative;
+  display: inline-block;
 }
 
-.nav-links a::after {
+.nav-links a::after,
+.nav-links > *::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -190,11 +193,13 @@
   transition: width 300ms ease;
 }
 
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-links > *:hover {
   color: #2563eb;
 }
 
-.nav-links a:hover::after {
+.nav-links a:hover::after,
+.nav-links > *:hover::after {
   width: 100%;
 }
 
