@@ -1,22 +1,26 @@
 import { useEffect, useState } from "react";
+import { useNotification } from "../context/NotificationContext.jsx";
 import AdminLogin from "../components/AdminLogin.jsx";
+import { AdminSidebar } from "../components/AdminSidebar.jsx";
+import { AdminDashboard } from "../components/AdminDashboard.jsx";
 import AdminForms from "../components/AdminForms.jsx";
 import AdminTables from "../components/AdminTables.jsx";
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 function AdminPage() {
+  const { success, error, info } = useNotification();
   const [projects, setProjects] = useState([]);
   const [clients, setClients] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
   const [projectForm, setProjectForm] = useState({ title: "", description: "", image: "" });
   const [clientForm, setClientForm] = useState({ name: "", role: "", description: "", image: "" });
-  const [status, setStatus] = useState("");
   const [adminForm, setAdminForm] = useState({ email: "", password: "" });
   const [isAdmin, setIsAdmin] = useState(() => {
     return sessionStorage.getItem("admin_auth") === "true";
   });
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -34,15 +38,20 @@ function AdminPage() {
         setContacts(ctData);
         setSubscribers(sData);
       } catch (err) {
-        setStatus("Unable to reach server");
+        error("Unable to load dashboard data");
       }
     };
     load();
-  }, [isAdmin]);
+  }, [isAdmin, error]);
 
   const submitProject = async (e) => {
     e.preventDefault();
-    setStatus("Adding project");
+    
+    if (!projectForm.title || !projectForm.description || !projectForm.image) {
+      error("Please fill in all project fields");
+      return;
+    }
+
     try {
       const res = await fetch(`${apiBase}/api/projects`, {
         method: "POST",
@@ -53,15 +62,20 @@ function AdminPage() {
       const saved = await res.json();
       setProjects((prev) => [saved, ...prev]);
       setProjectForm({ title: "", description: "", image: "" });
-      setStatus("Project added");
+      success("Project added successfully!");
     } catch (err) {
-      setStatus("Project not added");
+      error("Failed to add project. Please try again.");
     }
   };
 
   const submitClient = async (e) => {
     e.preventDefault();
-    setStatus("Adding client");
+    
+    if (!clientForm.name || !clientForm.role || !clientForm.description || !clientForm.image) {
+      error("Please fill in all client fields");
+      return;
+    }
+
     try {
       const res = await fetch(`${apiBase}/api/clients`, {
         method: "POST",
@@ -72,9 +86,9 @@ function AdminPage() {
       const saved = await res.json();
       setClients((prev) => [saved, ...prev]);
       setClientForm({ name: "", role: "", description: "", image: "" });
-      setStatus("Client added");
+      success("Client added successfully!");
     } catch (err) {
-      setStatus("Client not added");
+      error("Failed to add client. Please try again.");
     }
   };
 
@@ -85,63 +99,92 @@ function AdminPage() {
     if (email === "admin@example.com" && password === "admin123") {
       setIsAdmin(true);
       sessionStorage.setItem("admin_auth", "true");
-      setStatus("Admin logged in");
+      success("Admin logged in successfully!");
     } else {
-      setStatus("Invalid admin credentials");
+      error("Invalid email or password");
     }
   };
 
   const logout = () => {
     setIsAdmin(false);
     sessionStorage.removeItem("admin_auth");
+    success("Logged out successfully!");
   };
 
   if (!isAdmin) {
-    return <AdminLogin form={adminForm} setForm={setAdminForm} onSubmit={submitAdmin} status={status} />;
+    return <AdminLogin form={adminForm} setForm={setAdminForm} onSubmit={submitAdmin} />;
   }
 
   return (
-    <div className="admin-page">
-      <div className="admin-hero">
-        <div>
-          <p className="pill">Dashboard</p>
-          <h1>Admin Workspace</h1>
-          <p>Manage projects, clients, and review submissions.</p>
-        </div>
-        <button className="ghost" onClick={logout}>Logout</button>
-      </div>
+    <div className="admin-layout">
+      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} logout={logout} />
+      
+      <main className="admin-main">
+        {activeTab === "dashboard" && (
+          <AdminDashboard
+            projects={projects}
+            clients={clients}
+            contacts={contacts}
+            subscribers={subscribers}
+          />
+        )}
 
-      <div className="admin-stats">
-        <div className="stat-card">
-          <span className="stat-label">Projects</span>
-          <span className="stat-value">{projects.length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Clients</span>
-          <span className="stat-value">{clients.length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Contacts</span>
-          <span className="stat-value">{contacts.length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Subscribers</span>
-          <span className="stat-value">{subscribers.length}</span>
-        </div>
-      </div>
+        {activeTab === "projects" && (
+          <div className="admin-content-section">
+            <div className="section-header">
+              <h1>Projects Management</h1>
+              <p>Add and manage your projects</p>
+            </div>
+            <AdminForms
+              projectForm={projectForm}
+              setProjectForm={setProjectForm}
+              submitProject={submitProject}
+              clientForm={clientForm}
+              setClientForm={setClientForm}
+              submitClient={() => {}}
+              showClientForm={false}
+            />
+          </div>
+        )}
 
-      <div className="admin-shell">
-        <AdminForms
-          projectForm={projectForm}
-          setProjectForm={setProjectForm}
-          submitProject={submitProject}
-          clientForm={clientForm}
-          setClientForm={setClientForm}
-          submitClient={submitClient}
-        />
-        <AdminTables contacts={contacts} subscribers={subscribers} />
-      </div>
-      {status && <div className="status">{status}</div>}
+        {activeTab === "clients" && (
+          <div className="admin-content-section">
+            <div className="section-header">
+              <h1>Clients Management</h1>
+              <p>Add and manage your clients</p>
+            </div>
+            <AdminForms
+              projectForm={projectForm}
+              setProjectForm={setProjectForm}
+              submitProject={() => {}}
+              clientForm={clientForm}
+              setClientForm={setClientForm}
+              submitClient={submitClient}
+              showProjectForm={false}
+            />
+          </div>
+        )}
+
+        {activeTab === "contacts" && (
+          <div className="admin-content-section">
+            <div className="section-header">
+              <h1>Contact Submissions</h1>
+              <p>View all contact form submissions</p>
+            </div>
+            <AdminTables contacts={contacts} subscribers={[]} showSubscribers={false} />
+          </div>
+        )}
+
+        {activeTab === "subscribers" && (
+          <div className="admin-content-section">
+            <div className="section-header">
+              <h1>Newsletter Subscribers</h1>
+              <p>Manage newsletter subscribers</p>
+            </div>
+            <AdminTables contacts={[]} subscribers={subscribers} showContacts={false} />
+          </div>
+        )}
+      </main>
     </div>
   );
 }

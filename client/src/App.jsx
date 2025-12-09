@@ -3,17 +3,18 @@ import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
+import { NotificationProvider } from "./context/NotificationContext.jsx";
+import { ToastContainer } from "./components/Toast.jsx";
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-function App() {
+function AppContent() {
   const [projects, setProjects] = useState([]);
   const [clients, setClients] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
   const [contactForm, setContactForm] = useState({ fullName: "", email: "", phone: "", city: "" });
   const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -30,7 +31,7 @@ function App() {
         setContacts(ctData);
         setSubscribers(sData);
       } catch (err) {
-        setStatus("Unable to reach server");
+        console.error("Failed to load data", err);
       }
     };
     load();
@@ -38,7 +39,6 @@ function App() {
 
   const submitContact = async (e) => {
     e.preventDefault();
-    setStatus("Saving contact");
     try {
       const res = await fetch(`${apiBase}/api/contacts`, {
         method: "POST",
@@ -49,16 +49,14 @@ function App() {
       const saved = await res.json();
       setContacts((prev) => [saved, ...prev]);
       setContactForm({ fullName: "", email: "", phone: "", city: "" });
-      setStatus("Contact saved");
     } catch (err) {
-      setStatus("Contact not saved");
+      console.error("Failed to save contact", err);
     }
   };
 
   const submitSubscriber = async (e) => {
     e.preventDefault();
     if (!newsletterEmail.trim()) return;
-    setStatus("Subscribing");
     try {
       const res = await fetch(`${apiBase}/api/subscribers`, {
         method: "POST",
@@ -72,9 +70,8 @@ function App() {
         return exists ? prev : [saved, ...prev];
       });
       setNewsletterEmail("");
-      setStatus("Subscribed");
     } catch (err) {
-      setStatus("Subscription failed");
+      console.error("Failed to subscribe", err);
     }
   };
 
@@ -98,8 +95,16 @@ function App() {
         />
         <Route path="/admin" element={<AdminPage />} />
       </Routes>
-      {status && <div className="status floating">{status}</div>}
+      <ToastContainer />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <NotificationProvider>
+      <AppContent />
+    </NotificationProvider>
   );
 }
 

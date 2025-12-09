@@ -1,4 +1,4 @@
-function AdminLogin({ form, setForm, onSubmit, status }) {
+function AdminLogin({ form, setForm, onSubmit }) {
   return (
     <section className="admin-login" id="admin">
       <div className="admin-login-card">
@@ -48,7 +48,6 @@ function AdminLogin({ form, setForm, onSubmit, status }) {
             <button type="submit">Login</button>
           </form>
           <div className="hint">Use admin@example.com / admin123 to enter.</div>
-          {status && <div className="status">{status}</div>}
         </div>
       </div>
     </section>
